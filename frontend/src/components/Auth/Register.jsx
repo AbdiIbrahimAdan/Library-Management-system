@@ -4,7 +4,8 @@ import * as Yup from 'yup';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
 import './Register.css';
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState('');
@@ -60,10 +61,13 @@ const Register = () => {
         );
 
         if (response.data) {
-          navigate('/login');
+          toast.success('Registration successful! Redirecting to login...');
+          setTimeout(() => navigate('/login'), 3000); // Delay navigation to show the toast
         }
       } catch (error) {
-        setError(error.response?.data?.message || 'Registration failed. Please try again.');
+        toast.error(
+          error.response?.data?.message || 'Registration failed. Please try again.'
+        );
       } finally {
         setLoading(false);
       }
@@ -187,6 +191,7 @@ const Register = () => {
           Already have an account? <Link to="/login">Login here</Link>
         </p>
       </form>
+      <ToastContainer position="top-center" autoClose={3000} />
     </div>
   );
 };

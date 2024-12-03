@@ -1,59 +1,54 @@
-
-.manage-users-container {
+.manage-users {
+    max-width: 1200px;
+    margin: 20px auto;
     padding: 20px;
-    background-color: #f3c2c2;
-    border-radius: 8px;
-    max-width: 800px;
-    margin: 0 auto;
-    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-
-.manage-users-container h2 {
-    font-size: 1.8em;
-    font-weight: bold;
-    margin-bottom: 20px;
-    color: #0a0404;
-    text-align: center;
-}
-
-
-.user-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.user-list li {
-    display: flex;
-    justify-content: space-between;
     background-color: #fff;
-    padding: 15px 20px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
-    transition: background-color 0.3s ease;
-}
-
-
-.user-list li:hover {
-    background-color: #eaeaea;
-}
-
-
-.user-list li span {
-    font-size: 1em;
-    color: #070505;
-}
-
-
-@media (max-width: 600px) {
-    .manage-users-container h2 {
-        font-size: 1.5em;
-    }
-    
-    .user-list li {
-        flex-direction: column;
-        text-align: center;
-    }
-}
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  h2 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+  }
+  
+  table th,
+  table td {
+    padding: 12px 15px;
+    text-align: left;
+    font-size: 1rem;
+  }
+  
+  table th {
+    background-color: #007BFF;
+    color: #fff;
+  }
+  
+  table tbody tr:nth-child(even) {
+    background-color: #f4f4f4;
+  }
+  
+  table tbody tr:hover {
+    background-color: #f1f1f1;
+    cursor: pointer;
+  }
+  
+  table td {
+    border-bottom: 1px solid #ddd;
+  }
+  
+  p {
+    font-size: 1.2rem;
+    color: #555;
+    text-align: center;
+    margin-top: 30px;
+  }
+  

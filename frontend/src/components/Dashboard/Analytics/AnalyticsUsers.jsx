@@ -16,7 +16,7 @@ ChartJS.register(
   Legend
 );
 
-const AnalyticsDashboard = () => {
+const AnalyticsUsers = () => {
   const { fetchAnalytics, analytics, loading, error } = useUserStore();
   const [refreshInterval, setRefreshInterval] = useState(300000); // 5 minutes
   const intervalRef = useRef(null);
@@ -187,4 +187,4 @@ const AnalyticsDashboard = () => {
   );
 };
 
-export default AnalyticsDashboard;
+export default AnalyticsUsers;

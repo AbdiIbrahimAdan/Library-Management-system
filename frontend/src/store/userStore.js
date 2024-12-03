@@ -6,7 +6,7 @@ const api = axios.create({
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
-  }
+  },
 });
 
 // Token handling interceptor
@@ -24,13 +24,23 @@ api.interceptors.request.use(
 const useUserStore = create((set, get) => ({
   users: [],
   books: [],
+  cart: [],
+  borrowedBooks: [],
   stats: { users: 0, books: 0 },
-  analytics: { 
-    totalUsers: 0, 
-    genderStats: [], 
-    countryStats: [], 
+  analytics: {
+    totalUsers: 0,
+    genderStats: [],
+    countryStats: [],
     ageStats: [],
-    userGrowth: []
+    userGrowth: [],
+    totalBooks: 0,
+    activeUsers: 0,
+    totalBorrowings: 0,
+    returnRate: 0,
+    categoryDistribution: [],
+    borrowingTrends: [],
+    popularBooks: [],
+    userActivity: [],
   },
   loading: false,
   error: null,
@@ -40,29 +50,96 @@ const useUserStore = create((set, get) => ({
   setLoading: (loading) => set({ loading }),
   setError: (error) => set({ error }),
 
+  // Cart functionality
+  addToCart: (book) => {
+    const cart = get().cart;
+    if (!cart.find((item) => item._id === book._id)) {
+      set((state) => ({ cart: [...state.cart, book] }));
+    }
+  },
+
+  removeFromCart: (bookId) => {
+    set((state) => ({
+      cart: state.cart.filter((book) => book._id !== bookId),
+    }));
+  },
+
+  clearCart: () => set({ cart: [] }),
+
+  // Borrowing functionality
+  borrowBook: async (bookId, dueDate) => {
+    try {
+      set({ loading: true, error: null });
+
+      const response = await api.post('/borrowings/', { bookId, dueDate });
+      if (response.data.success) {
+        set((state) => ({
+          borrowedBooks: [...state.borrowedBooks, response.data.borrowing],
+          loading: false,
+          error: null,
+        }));
+      } else {
+        throw new Error('Borrowing failed.');
+      }
+    } catch (error) {
+      const errorMessage = error.response?.data?.message || error.message;
+      set({ error: errorMessage, loading: false });
+    }
+  },
+
   fetchAnalytics: async () => {
     try {
       const now = Date.now();
       const lastFetch = get().lastFetch;
-      
-      // Check cache validity
-      if (lastFetch && (now - lastFetch) < get().cacheTimeout) {
+
+      if (lastFetch && now - lastFetch < get().cacheTimeout) {
+        console.log('Using cached analytics data');
         return;
       }
 
       set({ loading: true, error: null });
-      const response = await api.get('/users/analytics');
-      
+
+      const response = await api.get('/analytics/dashboard');
       if (!response.data) {
-        throw new Error('No data received from server');
+        throw new Error('No analytics data received from server');
       }
+
+      const {
+        totalUsers = 0,
+        genderStats = [],
+        countryStats = [],
+        ageStats = [],
+        userGrowth = [],
+        totalBooks = 0,
+        activeUsers = 0,
+        totalBorrowings = 0,
+        returnRate = 0,
+        categoryDistribution = [],
+        borrowingTrends = [],
+        popularBooks = [],
+        userActivity = [],
+      } = response.data;
 
       set((state) => ({
         ...state,
-        analytics: response.data,
+        analytics: {
+          totalUsers,
+          genderStats,
+          countryStats,
+          ageStats,
+          userGrowth,
+          totalBooks,
+          activeUsers,
+          totalBorrowings,
+          returnRate,
+          categoryDistribution,
+          borrowingTrends,
+          popularBooks,
+          userActivity,
+        },
         loading: false,
         lastFetch: now,
-        error: null
+        error: null,
       }));
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
@@ -75,7 +152,6 @@ const useUserStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       const response = await api.get('/users');
-      
       if (!response.data) {
         throw new Error('No data received from server');
       }
@@ -85,7 +161,7 @@ const useUserStore = create((set, get) => ({
         users: response.data,
         stats: { ...state.stats, users: response.data.length },
         loading: false,
-        error: null
+        error: null,
       }));
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
@@ -98,7 +174,6 @@ const useUserStore = create((set, get) => ({
     try {
       set({ loading: true, error: null });
       const response = await api.get('/books');
-      
       if (!response.data) {
         throw new Error('No data received from server');
       }
@@ -108,7 +183,7 @@ const useUserStore = create((set, get) => ({
         books: response.data.books,
         stats: { ...state.stats, books: response.data.count || response.data.books.length },
         loading: false,
-        error: null
+        error: null,
       }));
     } catch (error) {
       const errorMessage = error.response?.data?.message || error.message;
@@ -117,23 +192,32 @@ const useUserStore = create((set, get) => ({
     }
   },
 
-  // Cleanup method
   cleanup: () => {
     set({
       users: [],
       books: [],
+      cart: [],
+      borrowedBooks: [],
       analytics: {
         totalUsers: 0,
         genderStats: [],
         countryStats: [],
         ageStats: [],
-        userGrowth: []
+        userGrowth: [],
+        totalBooks: 0,
+        activeUsers: 0,
+        totalBorrowings: 0,
+        returnRate: 0,
+        categoryDistribution: [],
+        borrowingTrends: [],
+        popularBooks: [],
+        userActivity: [],
       },
       loading: false,
       error: null,
-      lastFetch: null
+      lastFetch: null,
     });
-  }
+  },
 }));
 
 export default useUserStore;

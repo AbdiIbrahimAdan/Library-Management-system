@@ -1,185 +1,71 @@
-import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import axios from 'axios';
-import { FaStar } from 'react-icons/fa';
-import BorrowingForm from './BorrowingForm';
+import React, { useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Pie } from 'react-chartjs-2';
+import useUserStore from '../../store/userStore';
 import './BookDetail.css';
 
 const BookDetail = () => {
-  const { id } = useParams();
-  const [book, setBook] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [userRating, setUserRating] = useState(0);
-  const [comment, setComment] = useState('');
-  const [showBorrowForm, setShowBorrowForm] = useState(false);
-  const [recommendations, setRecommendations] = useState([]);
+  const { id } = useParams(); // Get the book ID from the URL
+  const navigate = useNavigate();
+  const { books, fetchBooks } = useUserStore();
 
   useEffect(() => {
-    fetchBookDetails();
-    fetchRecommendations();
-  }, [id]);
-
-  const fetchBookDetails = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/books/${id}`);
-      setBook(response.data);
-    } catch (error) {
-      console.error('Error fetching book details:', error);
-    } finally {
-      setLoading(false);
+    if (!books.length) {
+      fetchBooks(); // Fetch books if not already loaded
     }
-  };
+  }, [books, fetchBooks]);
 
-  const fetchRecommendations = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/books/recommendations`);
-      setRecommendations(response.data);
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-    }
-  };
+  const selectedBook = books.find((book) => book._id === id);
 
-  const handleRatingSubmit = async () => {
-    try {
-      await axios.post(`http://localhost:5000/api/books/${id}/rate`, {
-        rating: userRating,
-        comment
-      });
-      fetchBookDetails(); // Refresh book details
-      setUserRating(0);
-      setComment('');
-    } catch (error) {
-      console.error('Error submitting rating:', error);
-    }
-  };
-
-  if (loading) {
-    return <div className="loading-spinner">Loading...</div>;
+  if (!selectedBook) {
+    return (
+      <div className="book-detail-container">
+        <h2>Book Not Found</h2>
+        <button onClick={() => navigate(-1)} className="back-button">Go Back</button>
+      </div>
+    );
   }
 
-  if (!book) {
-    return <div className="error-message">Book not found</div>;
-  }
+  const genderData = {
+    labels: ['Male', 'Female', 'Other'],
+    datasets: [
+      {
+        data: selectedBook.genderStats || [30, 50, 20], // Mock data if not available
+        backgroundColor: ['#3498db', '#e74c3c', '#9b59b6'],
+      },
+    ],
+  };
+
+  const countryData = {
+    labels: (selectedBook.countryStats || []).map((c) => c.country || 'Unknown'),
+    datasets: [
+      {
+        data: (selectedBook.countryStats || []).map((c) => c.count || 0),
+        backgroundColor: ['#1abc9c', '#2ecc71', '#f1c40f', '#e67e22', '#e74c3c'],
+      },
+    ],
+  };
 
   return (
     <div className="book-detail-container">
-      <div className="book-detail-main">
-        <div className="book-detail-image">
-          <img src={book.imageUrl} alt={book.title} />
-        </div>
-        
-        <div className="book-detail-info">
-          <h1>{book.title}</h1>
-          <h2>by {book.author}</h2>
-          
-          <div className="book-rating-large">
-            {[...Array(5)].map((_, index) => (
-              <FaStar
-                key={index}
-                className={index < book.averageRating ? 'star-filled' : 'star-empty'}
-              />
-            ))}
-            <span>({book.totalRatings} ratings)</span>
-          </div>
-
-          <p className="book-description">{book.description}</p>
-          
-          <div className="book-metadata">
-            <p><strong>ISBN:</strong> {book.ISBN}</p>
-            <p><strong>Category:</strong> {book.category}</p>
-            <p><strong>Price:</strong> Ksh.{book.price}</p>
-            <p><strong>Available Copies:</strong> {book.availableCopies}</p>
-            <p><strong>Published:</strong> {new Date(book.publishedDate).toLocaleDateString()}</p>
-          </div>
-
-          <div className="book-actions">
-            <button 
-              className="borrow-button"
-              disabled={book.availableCopies === 0}
-              onClick={() => setShowBorrowForm(true)}
-            >
-              Borrow Book
-            </button>
-            <button className="cart-button">
-              Add to Cart
-            </button>
-          </div>
+      <button onClick={() => navigate(-1)} className="back-button">Back</button>
+      <div className="book-detail">
+        <img src={selectedBook.imageUrl} alt={selectedBook.title} className="book-detail-image" />
+        <div className="book-info">
+          <h1 className="book-title">{selectedBook.title}</h1>
+          <p className="book-description">{selectedBook.description}</p>
         </div>
       </div>
-
-      {/* Rating and Comment Section */}
-      <div className="rating-section">
-        <h3>Rate this Book</h3>
-        <div className="rating-input">
-          {[...Array(5)].map((_, index) => (
-            <FaStar
-              key={index}
-              className={index < userRating ? 'star-filled' : 'star-empty'}
-              onClick={() => setUserRating(index + 1)}
-            />
-          ))}
+      <div className="book-visualizations">
+        <div className="visualization-section">
+          <h2>Gender Statistics</h2>
+          <Pie data={genderData} />
         </div>
-        <textarea
-          value={comment}
-          onChange={(e) => setComment(e.target.value)}
-          placeholder="Write your review..."
-          className="comment-input"
-        />
-        <button 
-          onClick={handleRatingSubmit}
-          className="submit-rating-button"
-        >
-          Submit Review
-        </button>
-      </div>
-
-      {/* Comments Section */}
-      <div className="comments-section">
-        <h3>Reviews</h3>
-        {book.comments.map((comment) => (
-          <div key={comment._id} className="comment-card">
-            <div className="comment-header">
-              <div className="comment-rating">
-                {[...Array(5)].map((_, index) => (
-                  <FaStar
-                    key={index}
-                    className={index < comment.rating ? 'star-filled' : 'star-empty'}
-                  />
-                ))}
-              </div>
-              <span className="comment-date">
-                {new Date(comment.createdAt).toLocaleDateString()}
-              </span>
-            </div>
-            <p className="comment-text">{comment.comment}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* Recommendations Section */}
-      <div className="recommendations-section">
-        <h3>You May Also Like</h3>
-        <div className="recommendations-grid">
-          {recommendations.map((book) => (
-            <div key={book._id} className="recommendation-card">
-              <img src={book.imageUrl} alt={book.title} />
-              <h4>{book.title}</h4>
-              <p>{book.author}</p>
-            </div>
-          ))}
+        <div className="visualization-section">
+          <h2>Country Statistics</h2>
+          <Pie data={countryData} />
         </div>
       </div>
-
-      {showBorrowForm && (
-        <BorrowingForm
-          book={book}
-          onClose={() => setShowBorrowForm(false)}
-          onSuccess={() => {
-            setShowBorrowForm(false);
-            fetchBookDetails();
-          }}
-        />
-      )}
     </div>
   );
 };

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useFormik } from 'formik';
 import { Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { useUser } from '../../context/UserContext';
@@ -9,7 +11,6 @@ import './Login.css';
 const Login = () => {
   const { setUser } = useUser();
   const navigate = useNavigate();
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
@@ -28,23 +29,24 @@ const Login = () => {
     onSubmit: async (values) => {
       try {
         setLoading(true);
-        setError('');
-        
+
         const { data } = await axios.post(
-          'http://localhost:5000/api/auth/login', 
-          values, 
+          'http://localhost:5000/api/auth/login',
+          values,
           { withCredentials: true }
         );
 
         if (data.user) {
           setUser(data.user);
-          // Redirect based on role
-          data.user.role === 'Admin' 
-            ? navigate('/dashboard') 
+          toast.success('Login successful!');
+          data.user.role === 'Admin'
+            ? navigate('/dashboard')
             : navigate('/');
         }
       } catch (error) {
-        setError(error.response?.data?.message || 'Login failed. Please try again.');
+        toast.error(
+          error.response?.data?.message || 'Login failed. Please try again.'
+        );
       } finally {
         setLoading(false);
       }
@@ -54,9 +56,6 @@ const Login = () => {
   return (
     <div className="login-container">
       <h2>Login to Your Account</h2>
-      
-      {error && <div className="error-alert">{error}</div>}
-      
       <form onSubmit={formik.handleSubmit} className="login-form">
         <div className="form-group">
           <label htmlFor="email">Email</label>
@@ -77,15 +76,17 @@ const Login = () => {
             id="password"
             type="password"
             {...formik.getFieldProps('password')}
-            className={formik.touched.password && formik.errors.password ? 'error' : ''}
+            className={
+              formik.touched.password && formik.errors.password ? 'error' : ''
+            }
           />
           {formik.touched.password && formik.errors.password && (
             <div className="error-message">{formik.errors.password}</div>
           )}
         </div>
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading || !formik.isValid}
           className="submit-button"
         >

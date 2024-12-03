@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import useUserStore  from '../../../store/userStore.js';  // Import the zustand store
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -9,40 +9,23 @@ import { FaBook, FaUsers, FaChartLine, FaExchangeAlt } from 'react-icons/fa';
 import './AnalyticsDashboard.css';
 
 const AnalyticsDashboard = () => {
-  const [analytics, setAnalytics] = useState({
-    totalBooks: 0,
-    activeUsers: 0,
-    totalBorrowings: 0,
-    returnRate: 0,
-    categoryDistribution: [],
-    borrowingTrends: [],
-    popularBooks: [],
-    userActivity: []
-  });
-  const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState('month'); // week, month, year
+
+  const { analytics, loading, fetchAnalytics, error } = useUserStore(); // Updated to use useUserStore()
 
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8'];
 
+  // Fetch analytics when the time range changes
   useEffect(() => {
-    fetchAnalytics();
-  }, [timeRange]);
-
-  const fetchAnalytics = async () => {
-    try {
-      const response = await axios.get(`http://localhost:5000/api/analytics?timeRange=${timeRange}`, {
-        withCredentials: true
-      });
-      setAnalytics(response.data);
-    } catch (error) {
-      console.error('Error fetching analytics:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    fetchAnalytics(timeRange); // fetch analytics data based on selected time range
+  }, [timeRange, fetchAnalytics]);
 
   if (loading) {
     return <div className="loading">Loading analytics...</div>;
+  }
+
+  if (error) {
+    return <div className="error">{error}</div>;
   }
 
   return (
@@ -127,6 +110,21 @@ const AnalyticsDashboard = () => {
           </ResponsiveContainer>
         </div>
 
+        {/* Popular Books */}
+        <div className="chart-container">
+          <h3>Most Popular Books</h3>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={analytics.popularBooks}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="title" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="borrowCount" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
         {/* Borrowing Trends */}
         <div className="chart-container">
           <h3>Borrowing Trends</h3>
@@ -150,21 +148,6 @@ const AnalyticsDashboard = () => {
                 activeDot={{ r: 8 }}
               />
             </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Popular Books */}
-        <div className="chart-container">
-          <h3>Most Popular Books</h3>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={analytics.popularBooks}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="title" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="borrowCount" fill="#8884d8" />
-            </BarChart>
           </ResponsiveContainer>
         </div>
 
